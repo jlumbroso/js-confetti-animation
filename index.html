@@ -67,6 +67,13 @@
             font-weight: bold;
             margin: 10px 0;
         }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
     </style>
 </head>
 <body>
@@ -79,146 +86,64 @@
             <p>Subscribers!</p>
         </div>
 
-        <p>This amazing milestone deserves a celebration! Click the button below to start the party!</p>
+        <p>This amazing milestone deserves a celebration! Try different celebration styles!</p>
         
-        <button class="button" onclick="startCelebration()">Celebrate! 🎊</button>
+        <div class="button-group">
+            <button class="button" onclick="startCelebration('burst')">Quick Burst! 🎊</button>
+            <button class="button" onclick="startCelebration('timed')">5 Second Party! 🎉</button>
+            <button class="button" onclick="startCelebration('infinite')" id="infinite-button">Endless Party! 🎈</button>
+        </div>
     </div>
 
+    <script src="confetti-animation.js"></script>
     <script>
-        // Confetti animation class
-        class Confetti {
-            constructor(colors = ['#6a737d', '#0366d6', '#28a745', '#ffd33d', '#f66a0a', '#6f42c1', '#ea4aaa']) {
-                this.colors = colors;
-                this.confetti = [];
-                
-                this.container = document.createElement('div');
-                this.container.style.position = 'fixed';
-                this.container.style.top = '0';
-                this.container.style.left = '0';
-                this.container.style.width = '100%';
-                this.container.style.height = '0';
-                this.container.style.overflow = 'visible';
-                this.container.style.zIndex = '9999';
+        let currentConfetti = null;
+
+        function startCelebration(mode) {
+            // Stop any existing celebration
+            if (currentConfetti) {
+                currentConfetti.stop();
             }
 
-            createConfettoElement() {
-                const color = this.colors[Math.floor(Math.random() * this.colors.length)];
-                
-                const outer = document.createElement('div');
-                const inner = document.createElement('div');
-                
-                outer.appendChild(inner);
-                outer.style.position = 'absolute';
-                outer.style.width = `${3 + 9 * Math.random()}px`;
-                outer.style.height = `${3 + 9 * Math.random()}px`;
-                
-                inner.style.width = '100%';
-                inner.style.height = '100%';
-                inner.style.backgroundColor = color;
-                
-                outer.style.perspective = '50px';
-                outer.style.transform = `rotate(${360 * Math.random()}deg)`;
-                
-                const theta = 360 * Math.random();
-                const axis = `rotate3D(${Math.cos(360 * Math.random())},${Math.cos(360 * Math.random())},0,`;
-                
-                inner.style.transform = `${axis}${theta}deg)`;
-                
-                return {
-                    element: outer,
-                    x: window.innerWidth * Math.random(),
-                    y: -100,
-                    theta,
-                    axis,
-                    rotation: 0.4 + 0.3 * Math.random(),
-                    dx: Math.sin(-0.1 + 0.2 * Math.random()),
-                    dy: 0.13 + 0.18 * Math.random()
-                };
-            }
+            // Disable buttons during animation
+            const buttons = document.querySelectorAll('.button');
+            buttons.forEach(button => button.disabled = true);
 
-            update() {
-                const height = window.innerHeight;
-                const now = Date.now();
-                if (!this.lastUpdate) this.lastUpdate = now;
-                const deltaTime = now - this.lastUpdate;
-                this.lastUpdate = now;
-
-                for (let i = this.confetti.length - 1; i >= 0; i--) {
-                    const confetto = this.confetti[i];
-                    
-                    confetto.x += confetto.dx * deltaTime;
-                    confetto.y += confetto.dy * deltaTime;
-                    confetto.theta += confetto.rotation * deltaTime;
-                    
-                    confetto.element.style.transform = `translate(${confetto.x}px, ${confetto.y}px) rotate(${confetto.theta}deg)`;
-                    
-                    if (confetto.y > height + 100) {
-                        this.container.removeChild(confetto.element);
-                        this.confetti.splice(i, 1);
-                    }
-                }
-
-                if (this.confetti.length > 0) {
-                    requestAnimationFrame(() => this.update());
-                } else {
-                    this.stop();
-                }
-            }
-
-            start(duration = 5000) {
-                document.body.appendChild(this.container);
-                
-                const createConfetti = () => {
-                    if (!this.active) return;
-                    
-                    const confetto = this.createConfettoElement();
-                    this.confetti.push(confetto);
-                    this.container.appendChild(confetto.element);
-                    
-                    if (this.active) {
-                        setTimeout(createConfetti, 40 * Math.random());
-                    }
-                };
-
-                this.active = true;
-                createConfetti();
-                this.update();
-
-                if (duration) {
-                    setTimeout(() => this.stop(), duration);
-                }
-            }
-
-            stop() {
-                this.active = false;
-                if (this.container.parentNode) {
-                    document.body.removeChild(this.container);
-                }
-                this.confetti = [];
-            }
-        }
-
-        // Function to start the celebration
-        function startCelebration() {
-            const button = document.querySelector('.button');
-            button.disabled = true;
-            
             // Create confetti with custom celebratory colors
-            const confetti = new Confetti([
-                '#FFD700', // Gold
-                '#FF1493', // Deep Pink
-                '#00CED1', // Dark Turquoise
-                '#FF4500', // Orange Red
-                '#9370DB', // Medium Purple
-                '#32CD32'  // Lime Green
-            ]);
-            
-            confetti.start(3000);
-            
-            // Re-enable button after animation
-            setTimeout(() => {
-                button.disabled = false;
-            }, 3000);
+            currentConfetti = new Confetti({
+                colors: [
+                    '#FFD700', // Gold
+                    '#FF1493', // Deep Pink
+                    '#00CED1', // Dark Turquoise
+                    '#FF4500', // Orange Red
+                    '#9370DB', // Medium Purple
+                    '#32CD32'  // Lime Green
+                ],
+                fadeOut: true,
+                maxParticles: 150,
+                gravity: 0.15,
+                drift: 0.3
+            });
+
+            // Start the animation based on mode
+            currentConfetti.start(mode === 'burst' ? 'untilComplete' : 
+                               mode === 'timed' ? 5000 : null);
+
+            // Re-enable buttons after animation (except for infinite mode)
+            if (mode !== 'infinite') {
+                setTimeout(() => {
+                    buttons.forEach(button => button.disabled = false);
+                }, mode === 'burst' ? 2000 : 5000);
+            } else {
+                // For infinite mode, only enable the other buttons
+                setTimeout(() => {
+                    buttons.forEach(button => {
+                        if (!button.id.includes('infinite')) {
+                            button.disabled = false;
+                        }
+                    });
+                }, 1000);
+            }
         }
     </script>
 </body>
